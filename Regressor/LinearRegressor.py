@@ -3,22 +3,20 @@ class Regressor:
         self.w = weight
         self.b = bias
     
-    def trainModel(self,X, Y, LR=0.01):
+    def trainModel(self, X, Y, LR=0.01):
         n = len(X)
-        bSum = 0
-        wSum = 0
-        errorSum = 0
+        pdw = 0
+        pdb = 0
         for i in range(n):
-            bSum +=  Y[i] - ((X[i] * self.w) + self.b)
-            wSum += X[i] * bSum
-            errorSum += bSum**2
-        meanError = errorSum/n
-        pdw = (2/n) * wSum
-        pdb = (2/n) * bSum
-        print(pdw, pdb)
+            x = X.iloc[i]
+            y = Y.iloc[i]
+            pdb += -(2/n) * (y - (self.w * x) + self.b)
+            pdw += -(2/n) * (y - (self.w * x) + self.b) * x
+            # print(pdw, pdb)
         self.w -= (LR * pdw) 
         self.b -= (LR * pdb)
         return 0 
+
     def predict(self, x):
         y = (self.w * x) + self.b
         return y
@@ -27,26 +25,39 @@ class Regressor:
 if __name__ == "__main__":
     import numpy as np
     import matplotlib.pyplot as plt
+    import pandas as pd
 
-    X = list(np.random.randint(1, 10, size=10))
-    Y = list(np.random.randint(35, 60, size=10))
-    sy = sum(Y)
-    Y = list(map(lambda x: x/sy, Y))
+    # Dummy Data
+    train = pd.read_csv("Dummy-data/train.csv")
+    train.dropna(inplace=True)
+    Y = train['y']
+    X = train['x']
+    
+
+    # Normalize Data
+    # sy = sum(Y)
+    # Y = list(map(lambda x: x/sy, Y))
+
     # X = [1, 2, 3, 4, 5, 6, 7, 8, 9]
     # Y = [2, 4, 6, 8, 10, 12, 14, 16, 18]
-    reg = Regressor(weight=1, bias=1)
+    
+    # Main
+    reg = Regressor(weight=0, bias=0)
     print(f"Weight: {reg.w} Bias: {reg.b}")
-    reg.trainModel(X, Y, LR=.01)
-    print("training...")
-    print(f"Weight: {reg.w} Bias: {reg.b}")
-    print(reg.predict(5))
-    c = reg.b
-    slope = reg.w
-    fig, ax = plt.subplots()
-    ax.scatter(X, Y)
 
-    x_min, x_max = ax.get_xlim()
-    y_min, y_max = c, c + slope*(x_max-x_min)
-    ax.plot([x_min, x_max], [y_min, y_max])
-    ax.set_xlim([x_min, x_max])
+    epochs = 1000
+    for i in range(epochs):
+        reg.trainModel(X, Y, LR=.0001)
+        print(f"Weight: {reg.w} Bias: {reg.b}")
+    
+    slope = reg.w
+    c = reg.b
+
+    q = 40
+    print(f"prediction for X:{q} is {reg.predict(q)}")
+
+    # Ploting
+    plt.scatter(X, Y)
+    plt.plot(list(range(0, 100)), [reg.w * i + reg.b for i in range(0, 100)], color="red") 
+
     plt.show()
