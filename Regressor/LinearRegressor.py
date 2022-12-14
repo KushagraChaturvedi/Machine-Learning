@@ -1,83 +1,55 @@
-import numpy  as np
-
-class LinearRegressor:
-    def __init__(self, weight=1, bias=1):
+class Regressor:
+    def __init__(self, weight=0, bias=0):
         self.w = weight
         self.b = bias
     
-    # stochastic Gradient?
-    def Gradient(self, X, Y, LR=0.0001):
-        # variable init
+    def gradientDecent(self, X, Y, LR=0.01):
         n = len(X)
-        X = np.array(X)
-        Y = np.array(Y)
-
-        # Claculating slope of loss function with respect to Weight and Biases.
-        pdw = -(2/n) * np.sum((Y - (X * self.w + self.b)) * X)    
-        pdb = -(2/n) * np.sum((Y - (X * self.w + self.b)))
-
-        # Updating weights and biases.
+        pdw = 0
+        pdb = 0
+        for i in range(n):
+            x = X[i]
+            y = Y[i]
+            pdb += -(2/n) * (y - (self.w * x) + self.b)
+            pdw += -(2/n) * (y - (self.w * x) + self.b) * x
+            # print(pdw, pdb)
         self.w -= (LR * pdw) 
         self.b -= (LR * pdb)
 
-    
-    def trainModel(self, X, Y, LR=0.0001, E=100):
-        for i in range(E):
-            self.Gradient(X, Y, LR)
-
-    def modelError(self, X, Y):
+    def trainModel(self, X, Y, batchSize = 2, LR = 0.001):
         n = len(X)
-        X = np.array(X)
-        Y = np.array(Y)        
-
-        error = np.sum((Y - self.predict(X))**2) / n
-        return error
+        for i in range(0, n, batchSize):
+            self.gradientDecent(X[i:i+batchSize], Y[i:i+batchSize], LR)
     
     def predict(self, x):
         y = (self.w * x) + self.b
         return y
 
-class MVRegressor():
-    pass
 
-if __name__ == '__main__':
+if __name__ == "__main__":
+    import numpy as np
     import matplotlib.pyplot as plt
     import pandas as pd
+
+    # Dummy Data
+    train = pd.read_csv("Dummy-data/train.csv")
+    train.dropna(inplace=True)
+    Y = train['y']
+    X = train['x']
     
-    # dummy_train = pd.read_csv('Regressor/Dummy-data/train.csv').dropna()
-    # dummy_test = pd.read_csv('Regressor/Dummy-data/test.csv')
-    
-    # xTrain = dummy_train['x']
-    # yTrain = dummy_train['y']
-    # xTest = dummy_test['x']
-    # yTest = dummy_test['y']
+    # X = [1, 2, 3, 4, 5, 6, 7, 8, 9]
+    # Y = [2, 4, 6, 8, 10, 12, 14, 16, 18]
+    X = np.array(X)
+    Y = np.array(Y)
+    print(X.shape)
+    reg = Regressor(weight=0, bias=0)
 
-    dummy_train = [(0, 25), (2, 45), (1, 30), (3, 52), (9, 96), (3, 61), (2, 75), (8, 89), (6, 71), (7, 64), (4, 98)]
-    dummy_test = [(1, 31), (2, 43), (3, 45), (4, 75), (5, 77), (6, 81), (7, 86), (8, 85), (9, 90)]
-    
-    xTrain = list(map(lambda x: x[0], dummy_train))
-    yTrain = list(map(lambda x: x[1], dummy_train))
-    xTest = list(map(lambda x: x[0], dummy_test))
-    yTest = list(map(lambda x: x[1], dummy_test))
-  
-    reg = LinearRegressor()
+    # For small data set train it multiple times on the same data for good fit!
+    for i in range(2):
+        reg.trainModel(X, Y, batchSize= 32, LR = 0.0001)
 
-    print(f"\nBefore Training\nModel error: {reg.modelError(xTest, yTest)}\n\n")
-    reg.trainModel(xTrain, yTrain, LR=0.01)
-    print(f"After Traning\nModel error: {reg.modelError(xTest, yTest)}")
+    # Ploting
+    plt.scatter(X, Y)
+    plt.plot(list(range(0, 100)), [reg.w * i + reg.b for i in range(0, 100)], color="red") 
 
-
-    plt.scatter(xTest, yTest)
-    x = np.array([0, max(xTest)])
-    plt.plot(x, reg.predict(x), color='red')
     plt.show()
-
-
-
-   
-
-
-
-
-   
-
